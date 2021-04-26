@@ -3,9 +3,10 @@ server:
   error:
     include-exception: true
     include-stacktrace: always
-  
-spring:  application:    name: zuul
-      
+spring:
+  application:
+    name: zuul
+
 zuul:
   ignored-services: "*"
   routes:
