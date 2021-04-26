@@ -121,7 +121,7 @@ public class NotiMsgService {
 					msg.put("message", data.getMessage());
 					msg.put("note", data.getNote());
 					
-					if(curDate.compareTo(data.getSendDate()) > -1) {
+					if(curDate.isAfter(data.getSendDate())) {
 						listHist.add(msg);
 					} else {
 						listData.add(msg);
