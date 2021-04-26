@@ -1,0 +1,55 @@
+server:
+  port: 38080
+  
+spring:
+  application:
+    name: auth
+  jpa:
+    generate-ddl: false
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    show-sql: true
+    database: mysql
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+  datasource:
+    hikari:
+      connection-test-query: SELECT NOW() FROM dual
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      jdbc-url: jdbc:log4jdbc:mysql://127.0.0.1/auth?serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=utf8&useSSL=false
+      username: auth
+      password: qwe123!@#
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: admin
+    password: admin
+    
+logging:
+  config: classpath:logback-spring.xml
+
+access:
+  token:
+    secure:
+      key: rOM1rOMY2W0rAcceSs@n@gemEnTServ1c2
+    expire:
+      time: 30
+
+refresh:
+  token:
+    secure:
+      key: rOM1rOMY2W0ReFreSh@n@gemEnTServ1c2
+    expire:
+      time: 1440
+      
+eureka:
+  instance:
+    hostname: 127.0.0.1
+  client:
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:8080/eureka/
+    register-with-eureka: true
+    fetch-registry: false
+      
