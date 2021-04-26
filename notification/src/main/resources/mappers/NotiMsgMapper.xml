@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.romy.notification.repository.NotiMsgMapper">
+	
+	<!--
+		설명    	: 메시지 ID를 리턴한다.  
+		주사용처	: RabbitMQ 서비스
+		정렬순서	: 없음
+		파라미터	: 
+	-->
+	<select id="getNotiMsgId" resultType="java.lang.Long">
+	<![CDATA[
+		SELECT IFNULL(MAX(MSG_ID), 0) + 1
+		  FROM NOTI_MSG
+	]]>
+	</select>
+	
+	<!--
+		설명    	: 알림 메시지를 등록한다.  
+		주사용처	: RabbitMQ 서비스
+		정렬순서	: 없음
+		파라미터	: 
+	-->
+	<insert id="insertNotiMsg" parameterType="java.util.Map">
+	<![CDATA[
+		INSERT
+		  INTO NOTI_MSG
+		     (
+		       MSG_ID
+		     , MSG_TYPE_CD
+		     , TITLE
+		     , MESSAGE
+		     , MODULE_NAME
+	]]>
+		<if test="sender != null and sender != ''">
+		<![CDATA[
+		     , SENDER
+		]]>
+		</if>
+		<if test="sendDate != null and sendDate != ''">
+		<![CDATA[
+		     , SEND_DATE
+		]]>
+		</if>
+		<if test="note != null and note != ''">
+		<![CDATA[
+		     , NOTE
+		]]>
+		</if>
+	<![CDATA[
+		     )
+		VALUES
+		     (
+		       #{msgId}
+		     , #{msgTypeCd}
+		     , #{title}
+		     , #{message}
+		     , #{module}
+	]]>
+		<if test="sender != null and sender != ''">
+		<![CDATA[
+		     , #{sender}
+		]]>
+		</if>
+		<if test="sendDate != null and sendDate != ''">
+		<![CDATA[
+		     , #{sendDate}
+		]]>
+		</if>
+		<if test="note != null and note != ''">
+		<![CDATA[
+		     , #{note}
+		]]>
+		</if>
+	<![CDATA[
+		     )
+	]]>
+	</insert>
+	
+	<!--
+		설명    	: 발송자 정보를 수정한다.  
+		주사용처	: 알림 스케쥴러
+		정렬순서	: 없음
+		파라미터	: mailAddress	(필수) 발송자 정보
+		          msgId			(필수) 메시지ID
+	-->
+	<update id="upddateNotiMsgSender" parameterType="java.util.Map">
+	<![CDATA[
+		UPDATE NOTI_MSG
+		   SET SENDER = #{mailAddress}
+		 WHERE MSG_ID = #{msgId} 
+	]]>
+	</update>
+	
+	<!--
+		설명    	: 푸시 알림 메시지를 조회한다.  
+		주사용처	: 알림 스케쥴러
+		정렬순서	: 없음
+		파라미터	: 
+	-->
+	<select id="selNotiMsgByPush" resultType="com.romy.notification.common.config.ResultMap">
+	<![CDATA[
+		SELECT D1.TITLE
+		     , D1.MESSAGE
+		     , D2.SERVER_KEY
+		     , D2.PROJECT_ID
+		     , D2.MODULE_NAME
+		     , CAST(D1.MSG_ID AS CHAR(20)) AS MSG_ID
+		  FROM NOTI_MSG D1
+		  JOIN NOTI_MODULE D2
+		    ON D1.MODULE_NAME = D2.MODULE_NAME
+		 WHERE D1.MSG_TYPE_CD = 'P'
+		   AND D1.SEND_DATE <= NOW()
+		   AND EXISTS (
+		                SELECT 1
+		                  FROM NOTI_LISTENER
+		                 WHERE MSG_ID    = D1.MSG_ID
+		                   AND STATUS_CD = 'HOLD'
+		              )
+	]]>
+	</select>
+	
+	<!--
+		설명    	: 푸시 메시지 삭제  
+		주사용처	: 어플리케이션 호출
+		정렬순서	: 없음
+		파라미터	: msgId	(필수) 메시지 ID
+	-->
+	<delete id="deleteNotiMsgByPush" parameterType="java.util.Map">
+	<![CDATA[
+		DELETE
+		  FROM NOTI_MSG
+		 WHERE MSG_ID = #{pushId}
+	]]>
+	</delete>
+	
+</mapper>

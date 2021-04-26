@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.romy.notification.repository.NotiListenerMapper">
+	
+	<!--
+		설명    	: 발송할 알림 리스트를 조회한다.  
+		주사용처	: 알림 스케쥴러
+		정렬순서	: 없음
+		파라미터	: msgTypeCd	(필수) 메시지 유형
+	-->
+	<select id="selNotiSendList" resultType="com.romy.notification.common.config.ResultMap">
+	<![CDATA[
+		SELECT D1.TITLE
+		     , D1.MESSAGE
+		     , D1.MSG_ID
+		     , D2.LISTENER
+		     , D2.LISTENER_ID
+	]]>
+		<if test="msgTypeCd != null and msgTypeCd == 'M'.toString()">
+		<![CDATA[
+		     , D3.MAIL_ADDRESS
+		     , D3.MAIL_HOST
+		     , D3.MAIL_PORT
+		     , D3.MAIL_USERNAME
+		     , D3.MAIL_PASSWORD
+		     , D3.TLS_YN
+		]]>
+		</if>
+		<if test="msgTypeCd != null and msgTypeCd == 'P'.toString()">
+		<![CDATA[
+		     , D3.API_KEY
+		     , D3.SECRET
+		]]>
+		</if>
+	<![CDATA[
+		  FROM NOTI_MSG D1
+		  JOIN NOTI_LISTENER D2
+		    ON D1.MSG_ID = D2.MSG_ID
+	]]>
+	<if test="msgTypeCd == 'M'.toString() or msgTypeCd == 'P'.toString()">
+	<![CDATA[
+	      JOIN NOTI_MODULE D3
+	        ON D1.MODULE_NAME = D3.MODULE_NAME
+	]]>
+	</if>
+	<![CDATA[
+		 WHERE D2.STATUS_CD   = 'HOLD'
+		   AND D1.MSG_TYPE_CD = #{msgTypeCd}
+		 ORDER BY D1.MODULE_NAME
+	]]>
+	</select>
+	
+	<insert id="insertNotiListener" parameterType="java.util.Map">
+	<![CDATA[
+		INSERT
+		  INTO NOTI_LISTENER
+		     (
+		       MSG_ID
+		     , LISTENER
+		     , STATUS_CD
+		     )
+	    VALUES
+	]]>
+	<foreach collection="list" item="item" index="index" separator=",">
+	<![CDATA[
+		     (
+		       #{item.msgId}
+		     , #{item.listener}
+		     , 'HOLD'
+		     )
+	]]>
+	</foreach>
+	</insert>
+	
+	<!--
+		설명    	: 알림 발송 후 결과값을 저장한다.  
+		주사용처	: 알림 스케쥴러
+		정렬순서	: 없음
+		파라미터	: statuscd		(필수) 상태코드
+		          listenerId	(필수) 수신자ID
+		          errormsg		(선택) 오류 메시지
+	-->
+	<update id="updateNotiListener" parameterType="java.util.Map">
+	<![CDATA[
+		UPDATE NOTI_LISTENER
+		   SET STATUS_CD = #{statuscd}
+	]]>
+		<if test="errormsg != null and errormsg != ''">
+		<![CDATA[
+		     , ERROR_MSG = #{errormsg} 
+		]]>
+		</if>
+	<![CDATA[
+		 WHERE LISTENER_ID = #{listenerId} 
+	]]>
+	</update>
+	
+	
+	<select id="selNotiListenerByPush" resultType="java.lang.String">
+	<![CDATA[
+		SELECT LISTENER
+		  FROM NOTI_LISTENER
+		 WHERE MSG_ID    = #{msgId}
+		   AND STATUS_CD = 'HOLD'
+	]]>
+	</select>
+	
+	<update id="updateNotiListenerByPush" parameterType="java.util.Map">
+	<![CDATA[
+		UPDATE NOTI_LISTENER
+		   SET STATUS_CD = 'SUCCESS'
+	]]>
+	<![CDATA[
+		 WHERE MSG_ID = #{msgId} 
+		   AND EXISTS (
+		                SELECT 1
+		                  FROM (
+		                         SELECT NULL AS LISTENER
+	]]>
+							<foreach collection="successList" item="item">
+							<![CDATA[
+							      UNION ALL
+							     SELECT #{item} AS LISTENER
+							]]>
+							</foreach>
+	<![CDATA[
+		                       ) T
+		                 WHERE LISTENER = D1.LISTENER
+		              ) ;
+		              
+		UPDATE NOTI_LISTENER
+		   SET STATUS_CD = 'FAIL'
+	]]>
+	<![CDATA[
+		 WHERE MSG_ID = #{msgId} 
+		   AND EXISTS (
+		                SELECT 1
+		                  FROM (
+		                         SELECT NULL AS LISTENER
+	]]>
+							<foreach collection="failList" item="item">
+							<![CDATA[
+							      UNION ALL
+							     SELECT #{item} AS LISTENER
+							]]>
+							</foreach>
+	<![CDATA[
+		                       ) T
+		                 WHERE LISTENER = D1.LISTENER
+		              ) ;
+	]]>
+	</update>
+	
+</mapper>

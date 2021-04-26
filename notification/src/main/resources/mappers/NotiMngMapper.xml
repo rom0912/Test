@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.romy.notification.repository.NotiMngMapper">
+	
+	<!--
+		설명    	: 알림 정보를 등록한다.  
+		주사용처	: RabbitMQ 서비스
+		정렬순서	: 없음
+		파라미터	: 
+	-->
+	<insert id="insertNotiMng" parameterType="com.romy.notification.entity.NotiMng">
+	<![CDATA[
+		INSERT
+		  INTO NOTI_MNG
+		     (
+		       USER_KEY
+		     , MSG_INFO
+		     )
+		VALUES
+		     (
+		       #{userKey}
+		     , REPLACE(#{msgInfo}, '''', '"')
+		     )
+	]]>
+	</insert>
+	
+	<delete id="deleteNotiMngByUserKey" parameterType="java.util.Map">
+	<![CDATA[
+		DELETE
+		  FROM NOTI_MNG
+		 WHERE USER_KEY = #{userKey}
+	]]>
+	</delete>
+	
+</mapper>
