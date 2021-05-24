@@ -1,9 +1,12 @@
 server:
   port: 8080
-  error:    include-exception: true
+  error:
+    include-exception: true
     include-stacktrace: always
-  
-spring:  application:    name: eureka
+    
+spring:
+  application:
+    name: eureka
   mvc:
     view:
       prefix: /WEB-INF/jsp/
