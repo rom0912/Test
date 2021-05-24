@@ -46,10 +46,16 @@ refresh:
       
 eureka:
   instance:
-    hostname: 127.0.0.1
+    hostname: ${spring.application.name}
+    secure-virtual-host-name: ${spring.application.name}
+    lease-renewal-interval-in-seconds: 1
+    lease-expiration-duration-in-seconds: 2
+    non-secure-port-enabled: false
+    secure-port-enabled: true
+    secure-port: ${server.port}
   client:
     serviceUrl:
-      defaultZone: http://${eureka.instance.hostname}:8080/eureka/
+      defaultZone: http://127.0.0.1:8080/eureka/
     register-with-eureka: true
     fetch-registry: false
       
