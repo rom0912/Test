@@ -6,6 +6,12 @@ server:
 spring:
   application:
     name: zuul
+  servlet:
+    multipart:
+      file-size-threshold: 1MB
+      location: D:/Temp
+      max-file-size: 100MB
+      max-request-size: 500MB
 
 zuul:
   ignored-services: "*"
