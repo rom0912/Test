@@ -1,6 +1,7 @@
 package com.romy.file.module.service;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -193,9 +196,55 @@ public class FileListService {
 			if(fileInfo.exists()) {
 				return FileUtils.readFileToByteArray(fileInfo);
 			}
-			
 		}
 		
 		return null;
+	}
+	
+	/**
+	 * fileId에 해당하는 파일 전체 다운로드
+	 * @param paramMap
+	 * @return
+	 * @throws Exception
+	 */
+	public byte[] getFileInfoAll(Map<String, Object> paramMap) throws Exception {
+		
+		String fileId = (String) paramMap.get("fileId");
+		String rootPath = filePathService.getFilePathByFileId(fileId);
+		
+		UUID randUUID = UUID.randomUUID();
+		
+		File zipFile = new File(rootPath + File.separator + fileId + "_" +randUUID + ".zip");
+		
+		FileOutputStream fout = new FileOutputStream(rootPath + File.separator + fileId + "_" +randUUID + ".zip");
+		ZipOutputStream zout = new ZipOutputStream(fout);
+		
+		List<FileList> fileList = fileListRepository.findByIdFileId(Long.parseLong(fileId));
+		
+		byte[] buffer = new byte[4096];
+		
+		for (FileList file : fileList) {
+			File fileInfo = new File(
+					rootPath + File.separator + fileId + File.separator + file.getSaveFileName());
+			
+			if(fileInfo.exists()) {
+				ZipEntry zipEntry = new ZipEntry(file.getFileName());
+				zout.putNextEntry(zipEntry);
+
+				FileInputStream fin = new FileInputStream(fileInfo);
+				int length;
+
+				while ((length = fin.read(buffer)) > 0) {
+					zout.write(buffer, 0, length);
+				}
+
+				zout.closeEntry();
+				fin.close();
+			}
+		}
+		
+		zout.close();
+		
+		return FileUtils.readFileToByteArray(zipFile);
 	}
 }

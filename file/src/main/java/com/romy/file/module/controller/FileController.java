@@ -138,4 +138,28 @@ public class FileController {
 		
 		return null;
 	}
+	
+	/**
+	 * 파일 전체 다운로드 (zip 파일)
+	 * @param req
+	 * @param res
+	 * @param paramMap
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping("/downloadAll")
+	public @ResponseBody byte[] downloadAll(HttpServletRequest req, HttpServletResponse res,
+			@RequestBody Map<String, Object> paramMap) throws Exception {
+		
+		Log.DebugStart();
+		
+		try {
+			byte[] file = fileListService.getFileInfoAll(paramMap);
+			return file;
+		} catch (Exception e) {
+			Log.Debug(e.getMessage());
+		}
+		
+		return null;
+	}
 }
