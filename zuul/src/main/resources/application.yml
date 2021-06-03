@@ -1,19 +1,24 @@
 server:
-  port: 18080
+  port: 8081
   error:
     include-exception: true
     include-stacktrace: always
+  
 spring:
   application:
     name: zuul
   servlet:
     multipart:
       file-size-threshold: 1MB
-      location: D:/Temp
+      location: /Temp
       max-file-size: 100MB
       max-request-size: 500MB
-
+      
 zuul:
+  host:
+    connect-timeout-millis: 5000
+    connection-request-timeout-millis: 5000
+    socket-timeout-millis: 5000
   ignored-services: "*"
   routes:
     auth:
@@ -23,6 +28,8 @@ zuul:
     notification:
       path: /notification/**
       url: http://127.0.0.1:28080/
+      sensitive-headers:
+      - authorization, set-cookie
       strip-prefix: false
     file:
       path: /file/**
@@ -40,15 +47,9 @@ management:
  
 eureka:
   instance:
-    hostname: ${spring.application.name}
-    secure-virtual-host-name: ${spring.application.name}
-    lease-renewal-interval-in-seconds: 1
-    lease-expiration-duration-in-seconds: 2
-    non-secure-port-enabled: false
-    secure-port-enabled: true
-    secure-port: ${server.port}
+    hostname: 127.0.0.1
   client:
-    serviceUrl:
-      defaultZone: http://127.0.0.1:8080/eureka/
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:8080/eureka/
     register-with-eureka: true
     fetch-registry: false
