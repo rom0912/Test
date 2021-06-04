@@ -6,7 +6,7 @@ spring:
     name: zuul
   servlet:
     multipart:
-      file-size-threshold: 1MB
+      file-size-threshold: 100MB
       location: /Temp
       max-file-size: 100MB
       max-request-size: 500MB
