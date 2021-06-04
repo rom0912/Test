@@ -16,6 +16,7 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.romy.file.common.logger.Log;
 import com.romy.file.entity.FileList;
 import com.romy.file.entity.FileListId;
@@ -91,12 +92,7 @@ public class FileListService {
 		if(fileSize != null && fileSize > 0) {
 			
 			try {
-				List<Integer> listSource = (ArrayList) jsonFile.get("source");
-				
-				byte[] fileSource = new byte[listSource.size()];
-				for (Integer i=0, len=listSource.size(); i < len; i++) {
-					fileSource[i] = (listSource.get(i)).byteValue();
-				}
+				byte[] fileSource = new ObjectMapper().readValue((String) jsonFile.get("source"), byte[].class);
 				
 				File dir = new File(filePath.getFilePath() + File.separator + String.valueOf(filePath.getFileId()));
 				if(!dir.exists()) {
