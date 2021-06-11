@@ -16,7 +16,7 @@ zuul:
     connect-timeout-millis: 5000
     connection-request-timeout-millis: 5000
     socket-timeout-millis: 5000
-  ignored-services: "*"
+  ignored-services: '*'
   routes:
     auth:
       path: /auth/**
@@ -29,27 +29,19 @@ zuul:
     file:
       path: /file/**
       strip-prefix: false
- 
-ribbon:  eureka:    enabled: true
-    
-auth:
-  ribbon:
-    listOfServers: http://127.0.0.1:38080/
-    
-notification:
-  ribbon:
-    listOfServers: http://127.0.0.1:28080/
- 
-file:
-  ribbon:
-    listOfServers: http://127.0.0.1:18080/
+      
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
  
 eureka:
   instance:
-    instance-id: ${spring.application.name} 
     virtual-host-name: ${spring.application.name}
     lease-renewal-interval-in-seconds: 1
     lease-expiration-duration-in-seconds: 2
+    prefer-ip-address: true
   client:
     service-url:
       defaultZone: http://127.0.0.1:8080/eureka/
