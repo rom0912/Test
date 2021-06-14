@@ -3,12 +3,20 @@ package com.romy.notification.common.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.activation.DataHandler;
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.mail.util.ByteArrayDataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -54,43 +62,71 @@ public class SendNotificationUtil {
 	public void sendEmail(List<Map<String, Object>> mailList) {
 
 		String mailHost = "";
-
-		pt.put("mail.smtp.starttls.enable", true);
+		String id = "";
 
 		JavaMailSenderImpl sender = null;
+		Authenticator auth = null;
+		Session session = null;
 
 		for (Map<String, Object> info : mailList) {
 			try {
 
 				String tempMailHost = (String) info.get("mailHost");
+				id = (String) info.get("mailUsername");
 				if (!mailHost.equals(tempMailHost)) {
 					mailHost = tempMailHost;
 					sender = new JavaMailSenderImpl();
 					sender.setHost(mailHost);
 					sender.setPort((Integer) info.get("mailPort"));
-					sender.setUsername((String) info.get("mailUsername"));
+					sender.setUsername(id);
 					sender.setPassword((String) info.get("mailPassword"));
 					sender.setDefaultEncoding("UTF-8");
 					sender.setProtocol("smtp");
+			        
 					if("Y".equals(String.valueOf(info.get("tlsYn")))) {
+						pt.put("mail.smtp.host", tempMailHost);
+						pt.put("mail.smtp.port", info.get("mailPort"));
+						pt.put("mail.smtp.auth", "true");
+						pt.put("mail.smtp.starttls.enable", "true");
+						
 						sender.setJavaMailProperties(pt);
+						
+						auth = new MailAuth(id, (String) info.get("mailPassword"));
+						session = Session.getDefaultInstance(pt, auth);
+					} else {
+						auth = null;
+						session = null;
 					}
 
 					notiMsgService.upddateNotiMsgSender(info);
 				}
+				
+				if(session != null) {
+					MimeMessage msg = new MimeMessage(session);
 
-				sender.send(new MimeMessagePreparator() {
+		            msg.setSentDate(new Date());
+		            
+		            msg.setFrom(new InternetAddress(id, "관리자"));
+		            InternetAddress to = new InternetAddress((String) info.get("listener"));         
+		            msg.setRecipient(Message.RecipientType.TO, to);            
+		            msg.setSubject((String) info.get("title"), "UTF-8");            
+		            msg.setDataHandler(new DataHandler(new ByteArrayDataSource((String) info.get("message"), "text/html;charset=utf-8")));
+		            
+		            Transport.send(msg);
+				} else {
+					sender.send(new MimeMessagePreparator() {
 
-					@Override
-					public void prepare(MimeMessage message) throws Exception {
-						MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message, true, "UTF-8");
+						@Override
+						public void prepare(MimeMessage message) throws Exception {
+							MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message, true, "UTF-8");
 
-						mimeMessageHelper.setTo((String) info.get("listener"));
-						mimeMessageHelper.setSubject((String) info.get("title"));
-						mimeMessageHelper.setText((String) info.get("message"));
-						mimeMessageHelper.setFrom((String) info.get("mailAddress"));
-					}
-				});
+							mimeMessageHelper.setTo((String) info.get("listener"));
+							mimeMessageHelper.setSubject((String) info.get("title"));
+							mimeMessageHelper.setText((String) info.get("message"), true);
+							mimeMessageHelper.setFrom((String) info.get("mailAddress"));
+						}
+					});
+				}
 
 				info.put("statuscd", "SUCCESS");
 				notiListenerService.updateNotiListener(info);
