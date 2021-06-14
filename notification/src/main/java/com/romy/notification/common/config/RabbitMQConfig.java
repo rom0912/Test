@@ -15,16 +15,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-static final String topicExchangeName = "romy";
+	static final String topicExchangeName = "romy";
 	
 	@Bean
     Queue queue() {
-        return new Queue("sendNotification", true);
+        return new Queue("sendNotification", true, false, true);
     }
 
     @Bean
     TopicExchange exchange() {
-        return new TopicExchange(topicExchangeName);
+        return new TopicExchange(topicExchangeName, true, true);
     }
 
     @Bean
@@ -34,12 +34,12 @@ static final String topicExchangeName = "romy";
     
     @Bean
     Queue notiQueue() {
-        return new Queue("sendNotiMng", true);
+        return new Queue("sendNotiMng", true, false, true);
     }
 
     @Bean
     TopicExchange notiExchange() {
-        return new TopicExchange(topicExchangeName);
+        return new TopicExchange(topicExchangeName, true, true);
     }
 
     @Bean
