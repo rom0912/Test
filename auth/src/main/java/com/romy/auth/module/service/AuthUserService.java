@@ -423,11 +423,12 @@ public class AuthUserService {
 			
 		AuthUser user = authUserRepository.findByUserKeyAndTenantKey(userKey, tenantKey);
 		if(user != null) {
-			paramMap.clear();
-			paramMap.put("userKey", user.getUserKey());
-			paramMap.put("userId", user.getUserId());
-			paramMap.put("userDivCd", user.getUserDivCd());
-			paramMap.put("tenantKey", user.getTenantKey());
+			Map<String, Object> mapJwt = new HashMap<String, Object>();
+			
+			mapJwt.put("userKey", user.getUserKey());
+			mapJwt.put("userId", user.getUserId());
+			mapJwt.put("userDivCd", user.getUserDivCd());
+			mapJwt.put("tenantKey", user.getTenantKey());
 			
 			Jwt jwt = jwtTokenUtil.makeJwt(paramMap);
 			
@@ -437,6 +438,9 @@ public class AuthUserService {
 				
 				mapResult.put("accessToken", jwt.getAccessToken());
 				mapResult.put("refreshToken", jwt.getRefreshToken());
+				
+				paramMap.put("userName", user.getUserName());
+				rabbitMQUtil.sendLogLogin(paramMap);
 			} else {
 				mapResult.put("accessToken", "");
 				mapResult.put("refreshToken", "");
