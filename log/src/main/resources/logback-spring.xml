@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<!--로그 파일 저장 위치 -->
+	<property name="LOGS_PATH" value="./logs" />
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>%d{HH:mm} %-5level %logger{36} - %msg%n</Pattern>
+		</layout>
+	</appender>
+	
+	<appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%p %d{HH:mm:ss,SSS} [%c] %m%n</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOGS_PATH}/log.log</file>
+		<encoder>
+			<pattern>%p %d{HH:mm:ss,SSS} [%c] %m%n</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOGS_PATH}/log.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<!-- 사이즈 제한 
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>5MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			
+			<maxHistory>30</maxHistory>
+			-->
+		</rollingPolicy>
+	</appender>
+	
+	<appender name="SeparateLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOGS_PATH}/log_jpa.log</file>
+		<encoder>
+			<pattern>%p %d{HH:mm:ss,SSS} [%c] %m%n</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOGS_PATH}/log_jpa.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<!-- 사이즈 제한 
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>5MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			
+			<maxHistory>30</maxHistory>
+			-->
+		</rollingPolicy>
+	</appender>
+
+	<logger name="com.romy.log" level="DEBUG" additivity="false">
+		<appender-ref ref="Console" />
+		<appender-ref ref="RollingFile" />
+	</logger>
+	<logger name="org.springframework" level="ERROR" additivity="true">
+		<appender-ref ref="Console" />
+		<appender-ref ref="RollingFile" />
+	</logger>
+	
+	<logger name="jdbc.sqlonly" level="INFO" additivity="false">
+		<appender-ref ref="Console" />
+		<appender-ref ref="SeparateLog" />
+	</logger>
+	
+	<logger name="jdbc.resultsettable" level="INFO" additivity="false">
+		<appender-ref ref="Console" />
+		<appender-ref ref="SeparateLog" />
+	</logger>
+	
+	<root level="INFO">
+		<appender-ref ref="Console" />
+		<appender-ref ref="RollingFile" />
+	</root>
+</configuration>
