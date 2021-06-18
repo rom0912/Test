@@ -23,8 +23,7 @@ zuul:
       strip-prefix: false
     notification:
       path: /notification/**
-      sensitive-headers:
-      - authorization, set-cookie
+      sensitive-headers: set-cookie, cookie
       strip-prefix: false
     file:
       path: /file/**
