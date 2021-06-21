@@ -83,7 +83,11 @@ public class NotiListenerService {
 	 * push 결과 값 업데이트
 	 * @param paramMap
 	 */
-	public void updateNotiListenerByPush(Map<String, Object> paramMap) {
-		notiListenerMapper.updateNotiListenerByPush(paramMap);
+	public void updateNotiListenerSuccess(Map<String, Object> paramMap) {
+		notiListenerMapper.updateNotiListenerSuccess(paramMap);
+	}
+	
+	public void updateNotiListenerFail(Map<String, Object> paramMap) {
+		notiListenerMapper.updateNotiListenerFail(paramMap);
 	}
 }

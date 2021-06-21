@@ -1,7 +1,6 @@
 package com.romy.notification.common.util;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,6 +29,9 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Value;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.romy.notification.common.logger.Log;
 import com.romy.notification.module.service.NotiListenerService;
 import com.romy.notification.module.service.NotiMsgService;
 
@@ -150,10 +152,33 @@ public class SendNotificationUtil {
 		
 		GoogleCredentials credentials = GoogleCredentials
 				.fromStream(new ClassPathResource(fireBasePath).getInputStream())
-				.createScoped(Arrays.asList("https://www.googleapis.com/auth/cloud-platform"));
+				.createScoped(Arrays.asList("https://www.googleapis.com/auth/firebase.messaging"));
 		credentials.refreshIfExpired();
 		
 		return credentials.getAccessToken().getTokenValue();
+	}
+	
+	/**
+	 * 초기화
+	 * @param module
+	 */
+	private void initialize(String module) {
+		initialize(module);
+		try {
+			
+			String fireBasePath = "fcm/fcm_service_key_" + module.toLowerCase() + ".json";
+			
+			FirebaseOptions options = new FirebaseOptions.Builder()
+					.setCredentials(GoogleCredentials.fromStream(new ClassPathResource(fireBasePath).getInputStream()))
+					.build();
+			
+			if(FirebaseApp.getApps().isEmpty()) {
+				FirebaseApp.initializeApp(options);
+			}
+			
+		} catch (IOException e) {
+			Log.Debug(e.getMessage());
+		}
 	}
 
 	/**
@@ -174,91 +199,50 @@ public class SendNotificationUtil {
 			
 			List<String> devices = notiListenerService.selNotiListenerByPush(info);
 			
-			boolean isLoop = true;
-			int fromIndex = 0;
-			int toIndex = 0;
-			while (isLoop) {
-
-				int devicesSize = devices.size();
-				List<String> cutDevices = new ArrayList<>();
-
-				if (devicesSize > 1000) {
-					toIndex += 1000;
-				} else {
-					toIndex = devicesSize;
-				}
-
-				if (devicesSize <= toIndex) {
-					toIndex = devicesSize;
-					isLoop = false;
-				}
-				cutDevices = devices.subList(fromIndex, toIndex);
-
-				fromIndex = toIndex;
-
-				String param = buildupMsg(title, body, cutDevices);
+			if(devices.size() > 0) {
+				String param = buildupMsg(title, body, moduleName);
 				String resJson = fcmGw
 						.sendReq(MessageBuilder.withPayload(param)
 								.setHeader("url", FCM_URL + projectId + "/messages:send")
 								.setHeader("Content-Type", "application/json;charset=UTF-8")
-								.setHeader("Authorization", "Bearer " + getFcmAccessToken(moduleName)).build())
-						.getPayload().toString();
-
-				// 다시 보낼 디바이스 토큰을 찾는다.
-				List<String> failList = new ArrayList<String>();
-				List<String> successList = new ArrayList<String>();
+								.setHeader("Authorization", "Bearer " + getFcmAccessToken(moduleName))
+								.build()).getPayload().toString();
+				
 				if (resJson != null && !resJson.equals("")) {
+					// 결과 데이터
 					Map<String, Object> rsMap = mapper.readValue(resJson, new HashMap<String, Object>().getClass());
-					if (rsMap.containsKey("failure") && Integer.parseInt(rsMap.get("failure").toString()) > 0
-							&& rsMap.containsKey("results")) {
-						// error 건수가 있으면
-						List<Map<String, Object>> results = (List<Map<String, Object>>) rsMap.get("results");
-						int tokenLocation = 0;
-						for (Map<String, Object> result : results) {
-							if (result.containsKey("error")) {
-								failList.add(cutDevices.get(tokenLocation));
-							} else {
-								successList.add(cutDevices.get(tokenLocation));
-							}
-							tokenLocation++;
-						}
+					if (rsMap.containsKey("failure") && Integer.parseInt(rsMap.get("failure").toString()) > 0 ) {
+						Map<String, Object> paramMap = new HashMap<String, Object>();
+						paramMap.put("failList", devices);
+						paramMap.put("msgId", msgId);
+						
+						notiListenerService.updateNotiListenerFail(paramMap);
+					} else {
+						Map<String, Object> paramMap = new HashMap<String, Object>();
+						paramMap.put("successList", devices);
+						paramMap.put("msgId", msgId);
+						
+						notiListenerService.updateNotiListenerSuccess(paramMap);
 					}
 				}
-				
-				Map<String, Object> paramMap = new HashMap<String, Object>();
-				paramMap.put("failList", failList);
-				paramMap.put("successList", successList);
-				paramMap.put("msgId", msgId);
-				
-				notiListenerService.updateNotiListenerByPush(paramMap);
 			}
 		}
 	}
 
-	private String buildupMsg(String title, String body, List<String> devices) throws Exception {
-
-		if (devices == null || devices.size() == 0) {
-			return null;
-		}
+	private String buildupMsg(String title, String body, String module) throws Exception {
 
 		Map<String, Object> paramMap = new HashMap<>();
+		Map<String, Object> nMap = new HashMap<>();
 		Map<String, Object> notificationMap = new HashMap<>();
-		notificationMap.put("alert", title);
 		notificationMap.put("title", title);
 		notificationMap.put("body", body);
-		notificationMap.put("sound", "default");
-		notificationMap.put("vibrate", "true");
-		paramMap.put("notification", notificationMap);
-		/**
-		 * 안드로이드에서 data 로 뽑는 파라메터는 pushId = "" , message = "" String 구조
-		 */
-		paramMap.put("ttl", "86400s");
-		if (devices.size() == 1) {
-			paramMap.put("to", devices.get(0));
-		} else {
-			paramMap.put("registration_ids", devices);
-		}
-
+		
+		nMap.put("notification", notificationMap); 
+		
+		// topic(module)으로 푸시 발송
+		nMap.put("topic", module);
+		paramMap.put("message", nMap);
+		
 		return mapper.writeValueAsString(paramMap);
 	}
 	

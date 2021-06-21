@@ -17,6 +17,8 @@ public interface NotiListenerMapper {
 	
 	List<String> selNotiListenerByPush(Map<String, String> paramMap);
 	
-	void updateNotiListenerByPush(Map<String, Object> paramMap);
+	void updateNotiListenerSuccess(Map<String, Object> paramMap);
+	
+	void updateNotiListenerFail(Map<String, Object> paramMap);
 	
 }

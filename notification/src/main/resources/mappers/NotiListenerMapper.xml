@@ -13,11 +13,11 @@
 		SELECT D1.TITLE
 		     , D1.MESSAGE
 		     , D1.MSG_ID
-		     , D2.LISTENER
-		     , D2.LISTENER_ID
 	]]>
 		<if test="msgTypeCd != null and msgTypeCd == 'M'.toString()">
 		<![CDATA[
+		     , D2.LISTENER
+		     , D2.LISTENER_ID
 		     , D3.MAIL_ADDRESS
 		     , D3.MAIL_HOST
 		     , D3.MAIL_PORT
@@ -46,6 +46,13 @@
 	<![CDATA[
 		 WHERE D2.STATUS_CD   = 'HOLD'
 		   AND D1.MSG_TYPE_CD = #{msgTypeCd}
+	]]>
+	<if test="msgTypeCd != null and msgTypeCd == 'P'.toString()">
+	<![CDATA[
+	     GROUP BY D1.TITLE, D1.MESSAGE, D1.MSG_ID, D3.API_KEY, D3.SECRET
+	]]>
+	</if>
+	<![CDATA[
 		 ORDER BY D1.MODULE_NAME
 	]]>
 	</select>
@@ -105,9 +112,9 @@
 	]]>
 	</select>
 	
-	<update id="updateNotiListenerByPush" parameterType="java.util.Map">
+	<update id="updateNotiListenerSuccess" parameterType="java.util.Map">
 	<![CDATA[
-		UPDATE NOTI_LISTENER
+		UPDATE TB_NOTI_LISTENER D1
 		   SET STATUS_CD = 'SUCCESS'
 	]]>
 	<![CDATA[
@@ -126,9 +133,13 @@
 	<![CDATA[
 		                       ) T
 		                 WHERE LISTENER = D1.LISTENER
-		              ) ;
-		              
-		UPDATE NOTI_LISTENER
+		              )
+	]]>
+	</update>
+	
+	<update id="updateNotiListenerFail" parameterType="java.util.Map">
+	<![CDATA[
+		UPDATE TB_NOTI_LISTENER D1
 		   SET STATUS_CD = 'FAIL'
 	]]>
 	<![CDATA[
@@ -147,7 +158,7 @@
 	<![CDATA[
 		                       ) T
 		                 WHERE LISTENER = D1.LISTENER
-		              ) ;
+		              )
 	]]>
 	</update>
 	
