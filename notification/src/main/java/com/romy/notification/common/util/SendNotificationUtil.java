@@ -147,7 +147,7 @@ public class SendNotificationUtil {
 	 * @throws IOException
 	 */
 	private String getFcmAccessToken(String module) throws IOException {
-		
+		initialize(module);
 		String fireBasePath = "fcm/fcm_service_key_" + module.toLowerCase() + ".json";
 		
 		GoogleCredentials credentials = GoogleCredentials
